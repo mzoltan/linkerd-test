@@ -112,6 +112,13 @@ jobs:
         echo "::set-output name=AIKey::`az resource show -g ${{ env.RESOURCEGROUPNAME }} -n ${{ env.CLUSTERNAME }} --resource-type "Microsoft.Insights/components" --query "properties.InstrumentationKey" -o tsv`"
         echo "::add-mask::`az resource show -g ${{ env.RESOURCEGROUPNAME }} -n ${{ env.CLUSTERNAME }} --resource-type "Microsoft.Insights/components" --query "properties.InstrumentationKey" -o tsv`"
 
+    - name: Helm tool installer
+      uses: Azure/setup-helm@v1
+
+    - name : Install chart
+      run: | 
+        helm upgrade -i --create-namespace --atomic sapp ./Application/charts/sampleapp
+        
     - uses: azure/k8s-bake@v1
       id: bakeManifests
       with:
