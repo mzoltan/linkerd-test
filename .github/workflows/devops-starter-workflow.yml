@@ -6,7 +6,7 @@ on:
       - master
 
 env:
-  RESOURCEGROUPNAME: "linkerd-test-rg"
+  RESOURCEGROUPNAME: "linkerd-test-rg-2"
   LOCATION: "East US"
   SUBSCRIPTIONID: "9ed522a4-bb13-45cb-aa57-225f0d31468d"
   IMAGENAME: "linkerdtestabf6"
