@@ -119,7 +119,7 @@ jobs:
       run: | 
         kubectl get pod --all-namespaces
         helm ls
-        helm upgrade -i --create-namespace --debug sapp ./Application/charts/sampleapp
+        helm upgrade -i --create-namespace --debug --set image.repository="${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}" --set image.tag=${{ github.sha }} --set imagePullSecrets={${{ env.CLUSTERNAME }}dockerauth} --set applicationInsights.InstrumentationKey=${{ steps.GetAppInsightsKey.outputs.AIKey }} --set apiVersion=${{ env.KUBERNETESAPI }} --set extensionApiVersion=${{ env.KUBERNETESAPI }} sapp ./Application/charts/sampleapp
         # helm upgrade -i --create-namespace --atomic sapp ./Application/charts/sampleapp
         
     - uses: azure/k8s-bake@v1
