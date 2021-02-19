@@ -119,33 +119,33 @@ jobs:
       run: | 
         kubectl get pod --all-namespaces
         helm ls
-        helm upgrade -i --create-namespace --debug --set image.repository="${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}" --set image.tag=${{ github.sha }} --set imagePullSecrets={${{ env.CLUSTERNAME }}dockerauth} --set applicationInsights.InstrumentationKey=${{ steps.GetAppInsightsKey.outputs.AIKey }} --set apiVersion=${{ env.KUBERNETESAPI }} --set extensionApiVersion=${{ env.KUBERNETESAPI }} sapp ./Application/charts/sampleapp
+        helm upgrade -i --namespace ${{ env.NAMESPACE }} --debug --set image.repository="${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}" --set image.tag=${{ github.sha }} --set imagePullSecrets={${{ env.CLUSTERNAME }}dockerauth} --set applicationInsights.InstrumentationKey=${{ steps.GetAppInsightsKey.outputs.AIKey }} --set apiVersion=${{ env.KUBERNETESAPI }} --set extensionApiVersion=${{ env.KUBERNETESAPI }} sapp ./Application/charts/sampleapp
         # helm upgrade -i --create-namespace --atomic sapp ./Application/charts/sampleapp
         
-    - uses: azure/k8s-bake@v1
-      id: bakeManifests
-      with:
-        renderEngine: 'helm'
-        helmChart: './Application/charts/sampleapp' 
-        overrideFiles: './Application/charts/sampleapp/values.yaml'
-        overrides: |
-            image.repository:${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}
-            image.tag:${{ github.sha }}
-            imagePullSecrets:{${{ env.CLUSTERNAME }}dockerauth}
-            applicationInsights.InstrumentationKey:${{ steps.GetAppInsightsKey.outputs.AIKey }}
-            apiVersion:${{ env.KUBERNETESAPI }}
-            extensionApiVersion:${{ env.KUBERNETESAPI }}
-        helm-version: 'latest' 
-        silent: 'true'
+#     - uses: azure/k8s-bake@v1
+#       id: bakeManifests
+#       with:
+#         renderEngine: 'helm'
+#         helmChart: './Application/charts/sampleapp' 
+#         overrideFiles: './Application/charts/sampleapp/values.yaml'
+#         overrides: |
+#             image.repository:${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}
+#             image.tag:${{ github.sha }}
+#             imagePullSecrets:{${{ env.CLUSTERNAME }}dockerauth}
+#             applicationInsights.InstrumentationKey:${{ steps.GetAppInsightsKey.outputs.AIKey }}
+#             apiVersion:${{ env.KUBERNETESAPI }}
+#             extensionApiVersion:${{ env.KUBERNETESAPI }}
+#         helm-version: 'latest' 
+#         silent: 'true'
 
-    - uses: azure/k8s-deploy@v1
-      with:
-        namespace: ${{ env.NAMESPACE }}
-        manifests: ${{ steps.bakeManifests.outputs.manifestsBundle }}
-        images: |
-          ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
-        imagepullsecrets: |
-          ${{ env.CLUSTERNAME }}dockerauth
+#     - uses: azure/k8s-deploy@v1
+#       with:
+#         namespace: ${{ env.NAMESPACE }}
+#         manifests: ${{ steps.bakeManifests.outputs.manifestsBundle }}
+#         images: |
+#           ${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}:${{ github.sha }}
+#         imagepullsecrets: |
+#           ${{ env.CLUSTERNAME }}dockerauth
 
     - name : Cleanup
       run: | 
