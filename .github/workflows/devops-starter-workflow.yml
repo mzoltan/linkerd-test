@@ -117,7 +117,10 @@ jobs:
 
     - name : Install chart
       run: | 
-        helm upgrade -i --create-namespace --atomic sapp ./Application/charts/sampleapp
+        kubectl get pod --all-namespaces
+        helm ls
+        helm upgrade -i --create-namespace --debug sapp ./Application/charts/sampleapp
+        # helm upgrade -i --create-namespace --atomic sapp ./Application/charts/sampleapp
         
     - uses: azure/k8s-bake@v1
       id: bakeManifests
