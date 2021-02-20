@@ -112,14 +112,33 @@ jobs:
         echo "::set-output name=AIKey::`az resource show -g ${{ env.RESOURCEGROUPNAME }} -n ${{ env.CLUSTERNAME }} --resource-type "Microsoft.Insights/components" --query "properties.InstrumentationKey" -o tsv`"
         echo "::add-mask::`az resource show -g ${{ env.RESOURCEGROUPNAME }} -n ${{ env.CLUSTERNAME }} --resource-type "Microsoft.Insights/components" --query "properties.InstrumentationKey" -o tsv`"
 
-    - name: Helm tool installer
+    - name: Install Helm
       uses: Azure/setup-helm@v1
 
-    - name : Install chart
+    - name : Install step and generate certificates
+      run: | 
+        wget https://github.com/smallstep/cli/releases/download/v0.15.3/step-cli_0.15.3_amd64.deb
+        sudo dpkg -i step-cli_0.15.3_amd64.deb
+        step certificate create root.linkerd.cluster.local ca.crt ca.key --profile root-ca --no-password --insecure
+        step certificate create identity.linkerd.cluster.local issuer.crt issuer.key --profile intermediate-ca --not-after 8760h --no-password --insecure --ca ca.crt --ca-key ca.key
+
+    - name : Install linkerd chart
       run: | 
         kubectl get pod --all-namespaces
-        helm ls
+        helm ls --all-namespaces
+        helm repo add linkerd https://helm.linkerd.io/stable
+        exp=$(date -d '+8760 hour' +"%Y-%m-%dT%H:%M:%SZ")
+        helm upgrade -i --atomic --debug linkerd2 --set-file global.identityTrustAnchorsPEM=ca.crt --set-file identity.issuer.tls.crtPEM=issuer.crt --set-file identity.issuer.tls.keyPEM=issuer.key --set identity.issuer.crtExpiry=$exp linkerd/linkerd2
+        kubectl get pod --all-namespaces
+        helm ls --all-namespaces
+        
+    - name : Install application chart
+      run: | 
+        kubectl get pod --all-namespaces
+        helm ls --all-namespaces
         helm upgrade -i --atomic --namespace ${{ env.NAMESPACE }} --debug --set image.repository="${{ env.REGISTRYNAME }}.azurecr.io/${{ env.IMAGENAME }}" --set image.tag=${{ github.sha }} --set imagePullSecrets={${{ env.CLUSTERNAME }}dockerauth} --set applicationInsights.InstrumentationKey=${{ steps.GetAppInsightsKey.outputs.AIKey }} --set apiVersion=${{ env.KUBERNETESAPI }} --set extensionApiVersion=${{ env.KUBERNETESAPI }} sapp ./Application/charts/sampleapp
+        kubectl get pod --all-namespaces
+        helm ls --all-namespaces
         
 #     - uses: azure/k8s-bake@v1
 #       id: bakeManifests
